@@ -5,11 +5,11 @@ import {Redirect, Link} from 'react-router-dom';
 
 let url = window.location.protocol + '//' + document.domain;
 if (window.location.port !== "") {
-	url += ':' + window.location.port + '/Game';
+	url += ':' + window.location.port;
 }
-
+url+='/Game'
 let socket = io.connect(url);
-
+console.log(url)
 function Square(props) {
 	return (
 		<button
@@ -188,7 +188,6 @@ class App extends React.Component {
 	}
 
 	render(){
-		
 		return (
 			(this.props.location.state === undefined ? <Redirect to='/' /> : 
 			<div className="window">
