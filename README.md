@@ -1,7 +1,7 @@
 # Online 2 Player Tic-Tac-Toe Application
 
 # Demo : 
-[bit.ly/tic-tac-toe-online](bit.ly/tic-tac-toe-online)
+[http://bit.ly/tic-tac-toe-online](http://bit.ly/tic-tac-toe-online)
 
 # How to use : 
 1. Create a Game<br />
