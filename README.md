@@ -1,11 +1,11 @@
-#Online 2 Player Tic-Tac-Toe Application
+# Online 2 Player Tic-Tac-Toe Application
 
-#How to use : 
+# How to use : 
 1. Create a Game<br />
 2. Ask the other player to join using the created Game ID.<br />
 3. Play.<br />
 
-#Features :
+# Features :
 Can create any number of games. <br />
 Quick updates using Sockets. <br />
 Joined counter shows the count of players that have Joined. <br/>
@@ -13,7 +13,7 @@ Winner/Tie status.
 
 Built using React and Python + Flask
 
-#How to setup:
+# How to setup:
 1. Clone the repo.<br>
 2. create a python virtual environment, and install requirements.
 ### virtualenv venv
