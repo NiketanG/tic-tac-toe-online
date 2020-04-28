@@ -76,8 +76,7 @@ class Home extends Component{
 
     render(){
         return(
-            <div>
-                <div className="parent">
+            <div className="Parent">
                     <div className="Home">
                         <h1>
                             Tic-Tac-Toe
@@ -123,14 +122,11 @@ class Home extends Component{
                             </div>
                         }
                         <br/>
-                        
                     </div>
-                    
-                </div>
-                <div className="footer">
+                <div className="footerHome">
                             <Link to="/Info">Learn More</Link>
                             <p>Designed and Developed by <a href="http://bit.ly/nikketan">Niketan Gulekar</a> &copy;2020</p>
-                    </div>
+                </div>
             </div>
         );
     }

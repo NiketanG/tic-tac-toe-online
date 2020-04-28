@@ -1,20 +1,25 @@
 body {
-    text-align: center;
+    margin: 0;
 }
-.parent{
-    display: table;
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: calc(100% - 68px);
+.Parent {
+    display: flex;
+    align-items: center;
+    height: 100vh;
     width: 100%;
-    
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
 }
 
 .Home{
-    display: table-cell;
-    vertical-align: middle;
+    width: 100%;
 }
+
+div.footerHome{
+    font-size: 16px;
+    width: 100%;
+}
+
 h1{
     font-size: 40px;
 }
@@ -104,29 +109,19 @@ button:hover{
     margin-top: 50px;
 }
 
-div.footer{
-    font-size: 16px;
-
-     width: 100%;
-    position: absolute;
-    bottom: 5px;
-    left: 50%;
-    -ms-transform: translateX(-50%);
-    transform: translateX(-50%); 
-}
 
 
-div.footer a {
+div.footerHome a {
     font-size: 14px;
     color: #282828;
 }
 
-div.footer p a {
+div.footerHome p a {
     font-size: 16px;
     color: #282828;
 }
 
-div.footer p {
+div.footerHome p {
     text-decoration: none;
     color: grey;
 }
@@ -152,6 +147,9 @@ div.footer p {
     }
     .joinGame{
         width: 80%;
+    }
+    div.footerHome{
+        width: 80% !important;
     }
 
 }
