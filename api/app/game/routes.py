@@ -38,6 +38,7 @@ def create_game():
         db.session.rollback()
     return {'result':'success', 'game_id':game_id}
 
+
 @game_blueprint.route('/api/delete/game/<int:game_id>')
 def delete_game(game_id):
     game = Game.query.filter_by(game_id=game_id).first()
@@ -157,3 +158,22 @@ def handle_move(move_data):
         except Exception as e:
             print(e)
             db.session.rollback()
+
+@socketio.on('restartGame', namespace='/Game')
+def restartGame(data):
+    game_id = data.get('game_id')
+    curr_game = Game.query.filter_by(game_id=game_id).first()
+    if curr_game:
+        print('Game Found ' + str(game_id))
+        board = {}
+        for i in range(9):
+            board.update({i:None})
+        curr_game.board = json.dumps(board)
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(e)
+        socketio.emit('restarted', room=str(game_id), namespace='/Game')
+    else:
+        return {'result': 'fail'}

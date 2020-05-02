@@ -2,6 +2,8 @@ import React from 'react';
 import './Game.css';
 import io from 'socket.io-client';
 import {Redirect, Link} from 'react-router-dom';
+import toaster from 'toasted-notes';
+import 'toasted-notes/src/styles.css';
 
 let url = window.location.protocol + '//' + document.domain;
 if (window.location.port !== "") {
@@ -9,7 +11,6 @@ if (window.location.port !== "") {
 }
 url+='/Game'
 let socket = io.connect(url);
-console.log(url)
 function Square(props) {
 	return (
 		<button
@@ -27,6 +28,7 @@ class Board extends React.Component {
 		this.state = {
 			squares: [],
 			xIsNext: true,
+			enableRestart: false
 		};
 		this.getBoard = this.getBoard.bind(this);
 	}
@@ -34,6 +36,13 @@ class Board extends React.Component {
 	componentDidMount(){
 		this.getBoard();
 		socket.on('moved', (data)=>this.updateBoard(data))
+		socket.on('restarted', ()=> {
+				this.getBoard();
+				toaster.notify('Game Restarted !', {
+					duration: 2000
+			  	})
+		}
+			)
 	}
 
 	updateBoard(data){
@@ -42,28 +51,48 @@ class Board extends React.Component {
 		updatedSquares[pos] = data.player;
 		this.setState({squares: updatedSquares,
 			xIsNext: data.next === 'X' ? true : false})
+		const squares = updatedSquares;
+		let status = calculateWinner(squares);
+		if (status) {
+				this.setState({enableRestart: true})
+		}
 		// this.setState({squares: data.board,
 		// 	xIsNext: data.next === 'X' ? true : false})
 	}
 
 	getBoard(){
+		this.setState({enableRestart: false})
 		fetch('/api/fetch/game/' + this.props.game_id )
 			.then((response) => response.json())
 			.then((data) => {
 				if (data.result === 'success') {
 					this.setState({squares: data.board,
 						xIsNext: data.next === 'X' ? true : false})
+					const squares = data.board;
+					let status = calculateWinner(squares);
+					if (status) {
+							this.setState({enableRestart: true})
+					}
+
 				} else if (data.result === 'fail') {
 					window.location.href='/'
 				}
-			})
+			});
+		
+	}
+
+	restartGame(){
+		socket.emit('restartGame', {"game_id": this.props.game_id});
+		
 	}
 
 	handleClick(i) {
 		const squares = this.state.squares.slice();
-		if (calculateWinner(squares) || squares[i]) {
+		let status = calculateWinner(squares);
+		if (status || squares[i]) {
 			return;
 		}
+		
 		if (this.props.mode === 'create' && this.state.xIsNext === true) {
 			squares[i] = 'X'
 			//this.state.xIsNext ? 'X' : 'O';
@@ -98,6 +127,7 @@ class Board extends React.Component {
 		let status;
 		if (winner) {
 			status = winner;
+			
 		} else {
 			status = 'Next player: ' + (this.state.xIsNext ? (this.props.mode === 'create' ? 'You' : 'X') : (this.props.mode === 'join' ? 'You' : 'O'));
 		}
@@ -123,6 +153,9 @@ class Board extends React.Component {
 					</div>
 				</div>
 				<p>Playing as : <b>{this.props.mode === 'create' ? 'X' : 'O'}</b></p>
+				{this.state.enableRestart === true ? 
+				<button onClick={() => this.restartGame()}>Restart</button> : null}
+				
 			</div>
 		);
 	}
