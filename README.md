@@ -1,4 +1,5 @@
 # Online 2 Player Tic-Tac-Toe Application
+[![CodeFactor](https://www.codefactor.io/repository/github/niketang/tic-tac-toe-online/badge)](https://www.codefactor.io/repository/github/niketang/tic-tac-toe-online)
 
 # Demo : 
 [http://bit.ly/tic-tac-toe-online](http://bit.ly/tic-tac-toe-online)
