@@ -1,0 +1,32 @@
+.board-row:after {
+	clear: both;
+	content: "";
+	display: table;
+}
+
+.square {
+	float: left;
+	background: #fff;
+	border: 1px solid #999;
+	font-size: 24px;
+	font-weight: bold;
+	line-height: 100px;
+	width: 100px;
+	height: 100px;
+	margin-right: -1px;
+	margin-top: -1px;
+	padding: 0;
+}
+
+.square:focus {
+	outline: none;
+}
+
+@media only screen and (max-width: 400px) {
+	.square {
+		width: 80px;
+		height: 80px;
+		line-height: 80px;
+		font-size: 20px;
+	}
+}
