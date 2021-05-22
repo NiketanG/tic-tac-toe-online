@@ -19,22 +19,22 @@ const Join: React.FC<any> = () => {
 		});
 
 		const data = await res.json();
-		if (data.result === "fail") {
+		if (data.result === "fail") 
 			errorToast("Game does'nt exist");
 			history.replace({
 				pathname: "/",
 			});
-		}
+		
 
-		if (data.result === "success") {
+		if (data.result === "success") 
 			history.replace({
-				pathname: "/Game",
+				pathname: "/game",
 				state: {
 					gameId: params.gameId,
 					mode: "JOIN",
 				},
 			});
-		}
+		
 	};
 	useEffect(() => {
 		searchGame();
