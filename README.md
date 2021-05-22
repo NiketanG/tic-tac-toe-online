@@ -43,16 +43,17 @@ DATABASE_URI=
 ```
 
 4. Create Database table
-> Run this inside the [`api`](/api) directory
+    > Run this inside the [`api`](/api) directory
 
 ```
-python manage.py create_db
+flask db migrate -m "Initial" && flask db upgrade
 ```
 
 > The application is configured to use Postgresql by default.
 
 5. Run the backend
-> Run this inside the [`api`](/api) directory
+    > Run this inside the [`api`](/api) directory
+
 ```
 flask run
 ```
@@ -64,28 +65,28 @@ API_URL
 ```
 
 7. Run the frontend server
-> Run this in the [`web`](/web) directory
+    > Run this in the [`web`](/web) directory
+
 ```
 yarn start
 OR
 npm run start
 ```
 
-
-#### Production 
+#### Production
 
 1. Build the frontend
-> Run in `web` directory
+    > Run in `web` directory
+
 ```
 yarn build
 OR
 npm run build
 ```
 
-
 2. Start the server.
-> Run in `api` directory
+    > Run in `api` directory
+
 ```
 flask run
 ```
-

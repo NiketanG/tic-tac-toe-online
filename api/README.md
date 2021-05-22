@@ -37,7 +37,7 @@ DATABASE_URI=
     > Run these inside the `api` directory
 
 ```
-python manage.py create_db
+flask db migrate -m "Initial" && flask db upgrade
 ```
 
 > The application is configured to use Postgresql by default.
