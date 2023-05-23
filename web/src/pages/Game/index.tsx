@@ -1,17 +1,18 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Link, useLocation, useHistory } from "react-router-dom";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { FunctionalComponent, JSX } from "preact";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { API_URL } from "../../utils/constants";
 import { searchGame } from "../../utils/searchGame";
 import socket from "../../utils/socket";
 import "./game.css";
-import { toast, Slide } from "react-toastify";
+import { showToast } from "../../utils/showToast";
 
 type SquareProps = {
-	onClick: React.MouseEventHandler<HTMLButtonElement> | undefined;
+	onClick: JSX.MouseEventHandler<HTMLButtonElement> | undefined;
 	value: string | null;
 };
 
-const Square: React.FC<SquareProps> = ({ onClick, value }) => (
+const Square: FunctionalComponent<SquareProps> = ({ onClick, value }) => (
 	<button className="square" onClick={onClick}>
 		{value}
 	</button>
@@ -20,6 +21,14 @@ const Square: React.FC<SquareProps> = ({ onClick, value }) => (
 type BoardProps = {
 	mode: "CREATE" | "JOIN";
 	gameId: number;
+	data: {
+		playingAs: string;
+		squares: Array<string | null>;
+		xIsNext: boolean;
+		handleClick: (i: number) => void;
+		enableRestart: boolean;
+		restartGame: () => void;
+	};
 };
 
 type FetchGameResponse = {
@@ -33,32 +42,19 @@ type UpdateBoardResponse = {
 	next: "X" | "O";
 	player: any;
 };
-const Board: React.FC<BoardProps> = ({ mode, gameId }) => {
-	const [squares, setSquares] = useState<Array<string | null>>([]);
-	const [xIsNext, setXIsNext] = useState(true);
+const Board: FunctionalComponent<BoardProps> = ({
+	mode,
+	data: {
+		enableRestart,
+		handleClick,
+		restartGame,
+		squares,
+		xIsNext,
+		playingAs,
+	},
+}) => {
 	const [gameStatus, setGameStatus] = useState<string | null>(null);
-	const [enableRestart, setEnableRestart] = useState(false);
 
-	const playingAs = mode === "CREATE" ? "X" : "O";
-
-	const history = useHistory();
-
-	const squaresRef = useRef(squares);
-
-	useEffect(() => {
-		squaresRef.current = squares;
-	});
-
-	const showToast = (text: string) =>
-		toast(text, {
-			position: "bottom-center",
-			hideProgressBar: true,
-			draggable: false,
-			autoClose: 5000,
-			pauseOnHover: false,
-			closeOnClick: true,
-			transition: Slide,
-		});
 	useEffect(() => {
 		const gameResult = calculateWinner(squares);
 		if (gameResult) {
@@ -83,95 +79,9 @@ const Board: React.FC<BoardProps> = ({ mode, gameId }) => {
 		}
 	}, [squares]);
 
-	useEffect(() => {
-		getBoard();
-		socket.on("moved", updateBoard);
-		socket.on("restarted", () => {
-			getBoard();
-			showToast("Game Restarted !");
-		});
-		return () => {
-			socket.off("moved", updateBoard);
-		};
-	}, []);
-
-	const updateBoard = (data: UpdateBoardResponse) => {
-		const updatedSquares = [...squaresRef.current];
-		updatedSquares[data.position] = data.player;
-		setSquares(updatedSquares);
-		setXIsNext(data.next === "X");
-		const gameResult = calculateWinner(updatedSquares);
-		if (gameResult) setEnableRestart(true);
-		if (gameResult?.gameTied) {
-			showToast("Game Tied");
-		}
-
-		if (gameResult?.winner) {
-			if (gameResult.winner === playingAs) {
-				showToast("You won 🎉️");
-			} else {
-				showToast("You lost");
-			}
-		}
-	};
-
-	const getBoard = async () => {
-		setEnableRestart(false);
-		const res = await fetch(`${API_URL}api/fetch/game/${gameId}`);
-		const data: FetchGameResponse = await res.json();
-		if (data.result === "success") {
-			setSquares(data.board);
-			setXIsNext(data.next === "X");
-			const status = calculateWinner(data.board);
-			if (status) setEnableRestart(true);
-		} else if (data.result === "fail") {
-			history.replace({ pathname: "/" });
-		}
-	};
-
-	const handleClick = (i: number) => {
-		const tempSquares = squares.slice();
-		const gameResult = calculateWinner(squares);
-
-		if (gameResult || squares[i]) {
-			if (gameResult?.gameTied) {
-				showToast("Game Tied");
-			} else if (gameResult?.winner) {
-				if (gameResult.winner === playingAs) {
-					showToast("You won 🎉️");
-				} else {
-					showToast("You lost");
-				}
-			}
-			return;
-		}
-
-		if (mode === "CREATE" && xIsNext) {
-			tempSquares[i] = "X";
-			setSquares(tempSquares);
-			setXIsNext(false);
-			socket.emit("move", {
-				player: tempSquares[i],
-				position: i,
-				game_id: gameId,
-			});
-		} else if (mode === "JOIN" && !xIsNext) {
-			tempSquares[i] = "O";
-			setSquares(tempSquares);
-			setXIsNext(true);
-			socket.emit("move", {
-				player: tempSquares[i],
-				position: i,
-				game_id: gameId,
-			});
-		}
-	};
-
 	const renderSquare = (i: number) => (
 		<Square value={squares[i]} onClick={() => handleClick(i)} />
 	);
-
-	const restartGame = () => socket.emit("restartGame", { game_id: gameId });
 
 	return (
 		<div className="flex flex-col space-y-4 items-center">
@@ -197,7 +107,14 @@ const Board: React.FC<BoardProps> = ({ mode, gameId }) => {
 			<p>
 				Playing as : <b>{playingAs}</b>
 			</p>
-			{enableRestart && <button onClick={restartGame}>Restart</button>}
+			{enableRestart && (
+				<button
+					className="mt-8 mb-4 px-4 py-3 bg-white border border-black rounded hover:text-white hover:bg-black transition"
+					onClick={restartGame}
+				>
+					Restart
+				</button>
+			)}
 		</div>
 	);
 };
@@ -245,53 +162,254 @@ type SocketConnectedData = {
 	online: string[];
 };
 
-const Game: React.FC<any> = () => {
+const Game: FunctionalComponent<any> = () => {
 	const [online, setOnline] = useState(0);
 
 	const location = useLocation();
-	const history = useHistory();
+	const navigate = useNavigate();
 
-	const connected = (data: SocketConnectedData) =>
-		setOnline(data.online.length);
+	const [squares, setSquares] = useState<Array<string | null>>([]);
+	const [xIsNext, setXIsNext] = useState(true);
+	const [enableRestart, setEnableRestart] = useState(false);
+
+	const squaresRef = useRef(squares);
+
+	useEffect(() => {
+		squaresRef.current = squares;
+	});
 
 	const gameId = (location.state as LocationStateType)?.gameId;
 	const mode = (location.state as LocationStateType)?.mode || "JOIN";
 
+	const playingAs = mode === "CREATE" ? "X" : "O";
+
+	// Socket related
+	const [connectedData, setConnectedData] =
+		useState<SocketConnectedData | null>(null);
+
+	const prevConnectedRef = useRef<SocketConnectedData | null>();
+	useEffect(() => {
+		//assign the ref's current value to the count Hook
+		prevConnectedRef.current = connectedData;
+	}, [connectedData]);
+
+	const connected = (data: SocketConnectedData) => {
+		// setConnected(data);
+		const currentPlayer = mode === "CREATE" ? "X" : "O";
+		// Notify when opponent joins
+
+		if (
+			prevConnectedRef?.current?.online.length === 1 &&
+			data.online.length === 2 &&
+			prevConnectedRef?.current?.online.includes(currentPlayer)
+		) {
+			showToast("🆕  Opponent joined");
+		}
+
+		if (
+			prevConnectedRef?.current?.online.length === 2 &&
+			data.online.length === 1
+		) {
+			showToast("❌  Opponent left");
+		}
+		setConnectedData(data);
+		setOnline(data.online.length);
+	};
+
 	const checkIfGameExists = async () => {
 		const gameExists = await searchGame(gameId.toString());
+		console.log("gameExists", gameExists);
 		if (!gameExists) {
-			history.replace({
-				pathname: "/",
-			});
+			navigate(
+				{
+					pathname: "/",
+				},
+				{
+					replace: true,
+				}
+			);
 		}
 	};
 
 	useEffect(() => {
-		if (location.state !== undefined && gameId) checkIfGameExists();
+		if ((gameId as any) !== "COMPUTER") {
+			getBoard();
+			socket.on("moved", updateBoard);
+			socket.on("restarted", () => {
+				getBoard();
+				showToast("Game Restarted !");
+			});
+			return () => {
+				socket.off("moved", updateBoard);
+			};
+		} else {
+			setOnline(1);
+			setSquares(Array(9).fill(null));
+		}
 	}, []);
+
+	const updateBoard = (data: UpdateBoardResponse) => {
+		const updatedSquares = [...squaresRef.current];
+		updatedSquares[data.position] = data.player;
+		setSquares(updatedSquares);
+		setXIsNext(data.next === "X");
+		const gameResult = calculateWinner(updatedSquares);
+		if (gameResult) setEnableRestart(true);
+		if (gameResult?.gameTied) {
+			showToast("Game Tied");
+		}
+
+		if (gameResult?.winner) {
+			if (gameResult.winner === playingAs) {
+				showToast("You won 🎉️");
+			} else {
+				showToast("You lost");
+			}
+		}
+	};
+
+	const getBoard = async () => {
+		setEnableRestart(false);
+		const res = await fetch(`${API_URL}api/fetch/game/${gameId}`);
+		const data: FetchGameResponse = await res.json();
+		if (data.result === "success") {
+			setSquares(data.board);
+			setXIsNext(data.next === "X");
+			const status = calculateWinner(data.board);
+			if (status) setEnableRestart(true);
+		} else if (data.result === "fail") {
+			console.log("result", data.result);
+			navigate({ pathname: "/" }, { replace: true });
+		}
+	};
+
+	const enqueueComputerMove = async (newBoard: (string | null)[]) => {
+		// Computer move
+		// Get empty squares
+		const emptySquares = newBoard
+			.map((square, index) => {
+				if (square === null) return index;
+				return null;
+			})
+			.filter((square) => square !== null);
+
+		// Make a random move from empty squares
+		const randomIndex = Math.floor(Math.random() * emptySquares.length);
+		const randomSquare = emptySquares[randomIndex];
+
+		if (randomSquare !== null) {
+			updateBoard({
+				next: "X",
+				player: "O",
+				position: randomSquare,
+			});
+		}
+	};
+
+	const checkWinner = (newBoard: (string | null)[]) => {
+		const gameResult = calculateWinner(newBoard);
+
+		if (gameResult) {
+			if (gameResult?.gameTied) {
+				showToast("Game Tied");
+			} else if (gameResult?.winner) {
+				if (gameResult.winner === playingAs) {
+					showToast("You won 🎉️");
+				} else {
+					showToast("You lost");
+				}
+			}
+			setEnableRestart(true);
+			return gameResult;
+		}
+		return false;
+	};
+
+	const handleClick = (i: number) => {
+		const tempSquares = squares.slice();
+		// Check if square is already filled
+		if (tempSquares[i] || enableRestart) return;
+
+		if (mode === "CREATE" && xIsNext) {
+			tempSquares[i] = "X";
+			setSquares(tempSquares);
+			setXIsNext(false);
+			if ((gameId as any) !== "COMPUTER") {
+				socket.emit("move", {
+					player: tempSquares[i],
+					position: i,
+					game_id: gameId,
+				});
+			} else {
+				const isWinner = checkWinner(tempSquares);
+				if (isWinner) return;
+				setTimeout(() => {
+					enqueueComputerMove(tempSquares);
+				}, 1000);
+			}
+		} else if (mode === "JOIN" && !xIsNext) {
+			tempSquares[i] = "O";
+			setSquares(tempSquares);
+			setXIsNext(true);
+			if ((gameId as any) !== "COMPUTER") {
+				socket.emit("move", {
+					player: tempSquares[i],
+					position: i,
+					game_id: gameId,
+				});
+			}
+		}
+	};
+
+	const restartGame = () => {
+		if (gameId && (gameId as any) !== "COMPUTER") {
+			socket.emit("restartGame", { game_id: gameId });
+		} else {
+			setSquares(Array(9).fill(null));
+			setXIsNext(true);
+			showToast("Game Restarted !");
+			setEnableRestart(false);
+		}
+	};
 
 	useEffect(() => {
-		if (location.state !== undefined && gameId)
-			socket.emit("join", {
-				game_id: gameId,
-				player: mode === "CREATE" ? "X" : "O",
-			});
+		if (gameId && (gameId as any) !== "COMPUTER") checkIfGameExists();
+	}, [gameId]);
 
-		socket.on("connected", connected);
-		socket.on("disconnected", connected);
-		return () => {
-			socket.emit("leave", {
-				game_id: gameId,
-				player: mode === "CREATE" ? "X" : "O",
-			});
-			socket.off("connected");
-		};
+	useEffect(() => {
+		if ((gameId as any) !== "COMPUTER") {
+			if (location.state !== undefined && gameId)
+				socket.emit("join", {
+					game_id: gameId,
+					player: mode === "CREATE" ? "X" : "O",
+				});
+
+			socket.on("connected", connected);
+			socket.on("disconnected", connected);
+			return () => {
+				socket.emit("leave", {
+					game_id: gameId,
+					player: mode === "CREATE" ? "X" : "O",
+				});
+				socket.off("connected");
+			};
+		}
 	}, []);
 
-	if (!location.state || !gameId)
-		history.replace({
-			pathname: "/",
+	if (!location.state || !gameId) {
+		console.log({
+			state: location.state,
+			gameId: gameId,
 		});
+		navigate(
+			{
+				pathname: "/",
+			},
+			{
+				replace: true,
+			}
+		);
+	}
 
 	return (
 		<div
@@ -304,10 +422,22 @@ const Game: React.FC<any> = () => {
 				Go Home
 			</Link>
 
-			<p className="self-end md:text-lg">Joined: {online}</p>
-
+			{(gameId as any) !== "COMPUTER" ? (
+				<p className="self-end md:text-lg">Joined: {online}</p>
+			) : null}
 			<div className="flex-grow-1 h-full justify-center flex flex-col">
-				<Board gameId={gameId} mode={mode} />
+				<Board
+					gameId={gameId}
+					mode={mode}
+					data={{
+						squares,
+						xIsNext,
+						handleClick,
+						enableRestart,
+						restartGame,
+						playingAs,
+					}}
+				/>
 			</div>
 
 			<a

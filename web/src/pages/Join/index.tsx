@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
-import { useHistory, useParams } from "react-router";
+import { FunctionalComponent } from "preact";
+import { useEffect } from "preact/hooks";
+import { useNavigate, useParams } from "react-router";
 import { API_URL } from "../../utils/constants";
 
 import { errorToast } from "../../utils/errorToast";
@@ -7,9 +8,9 @@ type Params = {
 	gameId: string;
 };
 
-const Join: React.FC<any> = () => {
+const Join: FunctionalComponent<any> = () => {
 	const params = useParams<Params>();
-	const history = useHistory();
+	const navigate = useNavigate();
 
 	const searchGame = async () => {
 		const res = await fetch(`${API_URL}api/search/game`, {
@@ -21,14 +22,19 @@ const Join: React.FC<any> = () => {
 		const data = await res.json();
 		if (data.result === "fail") {
 			errorToast("Game does'nt exist");
-			history.replace({
+			navigate({
 				pathname: "/",
+			}, {
+				replace:true
 			});
 		}
 
 		if (data.result === "success") 
-			history.replace({
+			navigate({
 				pathname: "/game",
+				
+			}, {
+				replace: true,
 				state: {
 					gameId: params.gameId,
 					mode: "JOIN",

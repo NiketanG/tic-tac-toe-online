@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { Link, useHistory } from "react-router-dom";
-import { toast, Slide } from "react-toastify";
+import { FunctionalComponent } from "preact";
+import { useState } from "preact/hooks";
+import { useNavigate } from "react-router-dom";
+import { Slide, toast } from "react-toastify";
 
 import { API_URL } from "../../utils/constants";
 import { errorToast } from "../../utils/errorToast";
 import { searchGame } from "../../utils/searchGame";
 
-const Home: React.FC<any> = () => {
+const Home: FunctionalComponent<any> = () => {
 	const [gameId, setGameId] = useState(null);
 	const [gameExists, setGameExists] = useState(true);
 	const [gameIdToJoin, setGameIdToJoin] = useState<string | null>(null);
@@ -16,7 +17,7 @@ const Home: React.FC<any> = () => {
 
 	const [joiningGame, setJoiningGame] = useState(false);
 
-	const history = useHistory();
+	const navigate = useNavigate();
 
 	const createGame = async () => {
 		setJoinGameInput(false);
@@ -37,14 +38,27 @@ const Home: React.FC<any> = () => {
 
 	const toggleJoinGameInput = () => setJoinGameInput(!joinGameInput);
 
-	const startGame = () =>
-		history.push({
-			pathname: "/game",
+	const playAgainstComputer = () => {
+		navigate(`/game?gameId=COMPUTER&mode=CREATE`, {
 			state: {
-				gameId,
+				gameId: "COMPUTER",
 				mode: "CREATE",
 			},
 		});
+	};
+
+	const startGame = () =>
+		navigate(
+			{
+				pathname: "/game",
+			},
+			{
+				state: {
+					gameId,
+					mode: "CREATE",
+				},
+			}
+		);
 
 	const joinGame = async () => {
 		if (!gameIdToJoin) return null;
@@ -57,13 +71,17 @@ const Home: React.FC<any> = () => {
 				setGameExists(true);
 				setJoiningGame(false);
 				if (gameExists.online !== 2) {
-					history.push({
-						pathname: "/game",
-						state: {
-							gameId: gameIdToJoin,
-							mode: "JOIN",
+					navigate(
+						{
+							pathname: "/game",
 						},
-					});
+						{
+							state: {
+								gameId: gameIdToJoin,
+								mode: "JOIN",
+							},
+						}
+					);
 				} else {
 					setBothJoined(true);
 				}
@@ -93,25 +111,21 @@ const Home: React.FC<any> = () => {
 		});
 	};
 
-
-
-	const shareLink = (link:string) => {
+	const shareLink = (link: string) => {
 		if (navigator.share) {
 			try {
 				navigator.share({
-					title:"Tic Tac Toe Online",
+					title: "Tic Tac Toe Online",
 					text: "You're invited to play Tic Tac Toe Online",
-					url: link
-				})	
+					url: link,
+				});
 			} catch (err) {
-				console.error(err)
+				console.error(err);
 			}
-			
 		} else {
-			console.error("Sharing not supported")
+			console.error("Sharing not supported");
 		}
-
-	}
+	};
 
 	return (
 		<div
@@ -126,18 +140,31 @@ const Home: React.FC<any> = () => {
 					<p className="font-light text-xl ">Online</p>
 				</span>
 				<h3 className="text-xl text-center pt-4">Get Started</h3>
-				<div className="flex space-x-4 flex-wrap">
+				<div className="flex justify-center flex-wrap">
+					<div className="px-0 py-2 md:px-3 md:py-0">
+						<button
+							className="bg-black text-white px-4 py-3 hover:bg-white hover:text-black border border-black transition"
+							onClick={createGame}
+						>
+							{creatingGame ? "Creating..." : "Create a new game"}
+						</button>
+					</div>
+					<div className="px-0 py-2 md:px-3 md:py-0">
+						<button
+							onClick={toggleJoinGameInput}
+							className="border border-black bg-transparent text-black hover:bg-black hover:text-white px-4 py-3 transition"
+						>
+							{joiningGame ? "Joining..." : "Join a game"}
+						</button>
+					</div>
+				</div>
+				<div className="px-0 py-2 md:px-3 md:py-0">
+					<p className={"text-center mb-2"}>Or</p>
 					<button
-						className="bg-black text-white px-4 py-3 hover:bg-white hover:text-black border border-black transition"
-						onClick={createGame}
-					>
-						{creatingGame ? "Creating..." : "Create a new game"}
-					</button>
-					<button
-						onClick={toggleJoinGameInput}
 						className="border border-black bg-transparent text-black hover:bg-black hover:text-white px-4 py-3 transition"
+						onClick={playAgainstComputer}
 					>
-						{joiningGame ? "Joining..." : "Join a game"}
+						Play against Computer
 					</button>
 				</div>
 				{gameId && (
@@ -160,9 +187,17 @@ const Home: React.FC<any> = () => {
 							{window.location + "join/" + gameId}
 						</button>
 						{navigator.share !== undefined && (
-						<button
-						className="text-lg font-medium "
-						onClick={() => shareLink(window.location + "join/" + gameId)}>Share</button>)}
+							<button
+								className="text-lg font-medium "
+								onClick={() =>
+									shareLink(
+										window.location + "join/" + gameId
+									)
+								}
+							>
+								Share
+							</button>
+						)}
 						<button
 							className="bg-black text-white transition hover:bg-white hover:text-black  w-full md:w-64 py-3 my-4 border border-black"
 							onClick={startGame}
@@ -181,7 +216,7 @@ const Home: React.FC<any> = () => {
 								className="bg-gray-100 px-4 py-3 rounded-md w-48"
 								placeholder="Game ID"
 								onChange={(e) => {
-									setGameIdToJoin(e.target.value);
+									setGameIdToJoin((e.target as any)?.value);
 								}}
 							/>
 							<button
